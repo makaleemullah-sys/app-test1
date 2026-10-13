@@ -1,0 +1,11 @@
+{
+  "name": "Lunaria — Cycle Health Companion",
+  "short_name": "Lunaria",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf7f9",
+  "theme_color": "#b03a6f",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
