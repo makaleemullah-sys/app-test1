@@ -50,6 +50,10 @@ Lunaria is built mobile-first and installs like an app. It just has to be **host
    - **Android (Chrome):** menu ⋮ → *Add to Home screen / Install app*
    - **iPhone (Safari, iOS 16.4+):** Share → *Add to Home Screen*. Open it from the home-screen icon, then turn on notifications in *🔔 → Settings*. On iPhone, push notifications only work from the installed app.
 
+### Quick test on a phone (no server)
+
+`npm run build:phone` creates `dist/lunaria-phone.html`, the whole app in one file. It includes a built-in local backend that uses the same engines, validators and notification rules as the server. Open it in any phone browser: accounts and data stay on that device, and there's a one-tap **Try with demo data** button. It can't send push notifications while closed; the hosted version is needed for that.
+
 ## Run it locally
 
 Requires **Node.js ≥ 22.13** (it uses the built-in `node:sqlite`).
@@ -94,7 +98,8 @@ server/
     push.js               Web Push delivery (VAPID)
   routes/                 auth, core API, notifications + medications
 public/                   PWA: vanilla ES modules, service worker, manifest
-scripts/seed-demo.js      demo data
+scripts/                 demo data generator + seed, single-file phone build
+standalone/               in-browser backend + storage for the phone build
 test/                     node:test suites
 ```
 

@@ -112,3 +112,28 @@ export function lineChart({ series, xLabels = [], yMin = 0, yMax = 5, height = 1
   }
   return raw(out + '</svg>');
 }
+
+/** True in the single-file phone build, which has no server behind it. */
+export const STANDALONE = Boolean(globalThis.LUNARIA_STANDALONE);
+
+/** In-page confirmation dialog (native confirm() is blocked in some frames). */
+export function askConfirm(message, { confirmLabel = 'Confirm', danger = false } = {}) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'modal-backdrop';
+    wrap.innerHTML = `<div class="modal card" role="dialog" aria-modal="true">
+      <p>${esc(message)}</p>
+      <div class="row" style="justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" data-r="0">Cancel</button>
+        <button type="button" class="btn ${danger ? 'btn-danger' : ''}" data-r="1">${esc(confirmLabel)}</button>
+      </div></div>`;
+    const done = (v) => { wrap.remove(); resolve(v); };
+    wrap.addEventListener('click', (e) => {
+      if (e.target === wrap) return done(false);
+      const b = e.target.closest('[data-r]');
+      if (b) done(b.dataset.r === '1');
+    });
+    document.body.appendChild(wrap);
+    wrap.querySelector('[data-r="1"]').focus();
+  });
+}

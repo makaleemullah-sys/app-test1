@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { html, render, formData } from '../ui.js';
+import { html, render, formData, STANDALONE } from '../ui.js';
 
 export function render_(root, { onSignedIn }, mode = 'login') {
   render(root, html`<div class="auth-wrap">
@@ -24,6 +24,11 @@ export function render_(root, { onSignedIn }, mode = 'login') {
         <button class="btn btn-block" type="submit">${mode === 'register' ? 'Create my account' : 'Sign in'}</button>
       </form>
     </div>
+    ${STANDALONE ? html`<div class="card card-tint" style="margin-top:16px;text-align:center">
+      <p style="margin-bottom:10px"><b>Just testing?</b> Open a demo account filled with 7 months of sample data.</p>
+      <button type="button" class="btn btn-block" id="demo">Try with demo data</button>
+      <small class="muted" style="display:block;margin-top:8px">Your data in this test version stays private to you on this device or your Claude account.</small>
+    </div>` : ''}
     <div class="feature-list">
       <div>🔮 <b>Predictions that learn</b> — confirms ovulation from temperature & LH, not just averages.</div>
       <div>🧠 <b>Symptom intelligence</b> — personal forecasts of what tomorrow may bring and why.</div>
@@ -34,6 +39,17 @@ export function render_(root, { onSignedIn }, mode = 'login') {
   </div>`);
 
   root.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => render_(root, { onSignedIn }, b.dataset.mode)));
+  root.querySelector('#demo')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'Preparing demo…';
+    try {
+      await api.post('/auth/demo');
+      await onSignedIn();
+    } catch (ex) {
+      root.querySelector('#auth-error').textContent = ex.message;
+      e.target.disabled = false;
+    }
+  });
   const form = root.querySelector('#auth-form');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

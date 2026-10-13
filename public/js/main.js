@@ -1,5 +1,5 @@
 import { api } from './api.js';
-import { html, render } from './ui.js';
+import { html, render, toast, STANDALONE } from './ui.js';
 import * as authView from './views/auth.js';
 import * as onboardingView from './views/onboarding.js';
 import * as todayView from './views/today.js';
@@ -38,9 +38,27 @@ function topbar() {
   </header>`;
 }
 
-export function navigate(path, { replace = false } = {}) {
-  if (replace) history.replaceState({}, '', path);
+// The phone build runs inside a frame with no server routes, so it keeps the
+// current screen in memory instead of the address bar.
+const memLoc = { path: '/', search: '' };
+if (STANDALONE) {
+  const start = `/${location.hash.slice(1)}`;
+  if (ROUTES[start]) memLoc.path = start;
+}
+const currentPath = () => (STANDALONE ? memLoc.path : location.pathname);
+const currentSearch = () => (STANDALONE ? memLoc.search : location.search);
+
+function setUrl(path, replace = false) {
+  if (STANDALONE) {
+    const [p, q = ''] = path.split('?');
+    memLoc.path = p || '/';
+    memLoc.search = q ? `?${q}` : '';
+  } else if (replace) history.replaceState({}, '', path);
   else history.pushState({}, '', path);
+}
+
+export function navigate(path, { replace = false } = {}) {
+  setUrl(path, replace);
   route();
 }
 
@@ -55,7 +73,7 @@ async function route() {
     return onboardingView.render(app, { me: state.me, onDone: boot });
   }
   nav.classList.remove('hidden');
-  const path = location.pathname;
+  const path = currentPath();
   const view = ROUTES[path] || todayView;
   for (const a of nav.querySelectorAll('a')) a.classList.toggle('active', a.dataset.nav === path);
   render(app, html`${topbar()}<main id="view"><p class="empty">Loading…</p></main>`);
@@ -63,7 +81,8 @@ async function route() {
   try {
     await view.render(root, {
       me: state.me,
-      params: new URLSearchParams(location.search),
+      params: new URLSearchParams(currentSearch()),
+      replaceUrl: (p) => setUrl(p, true),
       navigate,
       refreshMe: async () => { state.me = await api.get('/auth/me'); },
       setUnread,
@@ -85,7 +104,7 @@ function setUnread(n) {
 async function signOut() {
   await api.post('/auth/logout').catch(() => {});
   state.me = null;
-  history.replaceState({}, '', '/');
+  setUrl('/', true);
   route();
 }
 
@@ -101,6 +120,13 @@ async function pollNotifications(initial = false) {
     const fresh = items.filter((n) => !n.read && !state.seenIds.has(n.id));
     items.forEach((n) => state.seenIds.add(n.id));
     if (initial || !fresh.length) return;
+    toast(`🔔 ${fresh[0].title}`, 4000);
+    if (STANDALONE) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        for (const n of fresh.slice(0, 3)) { try { new Notification(n.title, { body: n.body, tag: n.dedupe_key }); } catch { /* not allowed here */ } }
+      }
+      return;
+    }
     if ('Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager?.getSubscription?.();
@@ -125,16 +151,17 @@ async function boot() {
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href]');
   if (e.defaultPrevented || !a || a.target || a.hasAttribute('download') || e.metaKey || e.ctrlKey || e.shiftKey) return;
-  const url = new URL(a.href, location.href);
-  if (url.origin !== location.origin || url.pathname.startsWith('/api/')) return;
+  const href = a.getAttribute('href') || '';
+  // Only same-app paths ("/calendar", "/log?date=…") are routed here.
+  if (!href.startsWith('/') || href.startsWith('//') || href.startsWith('/api/')) return;
   e.preventDefault();
-  navigate(url.pathname + url.search);
+  navigate(href);
 });
-window.addEventListener('popstate', route);
+if (!STANDALONE) window.addEventListener('popstate', route);
 window.addEventListener('lunaria:signed-out', () => { if (state.me) { state.me = null; route(); } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) pollNotifications(); });
 setInterval(pollNotifications, 120000);
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+if (!STANDALONE && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
 boot();

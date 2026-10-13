@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { html, render as paint, toast, onActions } from '../ui.js';
+import { html, render as paint, toast, onActions, askConfirm, STANDALONE } from '../ui.js';
 
 const ICON = { period: '🩸', fertility: '🌸', reminder: '✍️', hydration: '💧', medication: '💊', phase: '🌙', forecast: '🔮', nutrition: '🥗', health: '🩺', test: '🔔' };
 const PREF_COPY = [
@@ -24,6 +24,11 @@ function urlBase64ToUint8Array(base64) {
 }
 
 async function pushStatus() {
+  // The phone build has no service worker: notifications show while the app is open.
+  if (STANDALONE) {
+    if (!('Notification' in window)) return 'inapp';
+    return Notification.permission === 'granted' ? 'local-on' : Notification.permission === 'denied' ? 'inapp' : 'local-off';
+  }
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported';
   if (Notification.permission === 'denied') return 'denied';
   const reg = await navigator.serviceWorker.ready;
@@ -79,7 +84,10 @@ export async function render(root, ctx) {
       ${tab === 'settings' ? html`<div class="grid">
         <div class="card">
           <h2>📲 Push notifications on this device</h2>
-          ${push === 'unsupported' ? html`<p class="muted">This browser doesn’t support push. Install Lunaria to your home screen (iOS 16.4+) or use Chrome/Edge/Firefox. You’ll still get in-app notifications.</p>`
+          ${push === 'inapp' ? html`<p class="muted">This test version shows notifications inside the app (🔔 inbox and pop-up banners) while it's open. System notifications are blocked here; the hosted version delivers them to your phone even when it's closed.</p><button class="btn btn-soft btn-sm" data-action="test">Send test</button>`
+            : push === 'local-on' ? html`<p>✅ Device notifications on while Lunaria is open.</p><button class="btn btn-soft btn-sm" data-action="test">Send test</button>`
+            : push === 'local-off' ? html`<p class="muted">Show reminders as device notifications while Lunaria is open.</p><button class="btn" data-action="local-on">Allow notifications</button>`
+            : push === 'unsupported' ? html`<p class="muted">This browser doesn’t support push. Install Lunaria to your home screen (iOS 16.4+) or use Chrome/Edge/Firefox. You’ll still get in-app notifications.</p>`
             : push === 'denied' ? html`<p class="muted">Notifications are blocked in your browser settings for this site.</p>`
             : push === 'on' ? html`<p>✅ Enabled on this device.</p><div class="row"><button class="btn btn-soft btn-sm" data-action="test">Send test</button><button class="btn btn-ghost btn-sm" data-action="push-off">Disable</button></div>`
             : html`<p class="muted">Get reminders even when Lunaria is closed.</p><button class="btn" data-action="push-on">Enable push notifications</button>`}
@@ -121,13 +129,18 @@ export async function render(root, ctx) {
   }
 
   onActions(root, {
-    tab: (el) => { tab = el.dataset.tab; history.replaceState({}, '', `/notifications?tab=${tab}`); draw(); },
+    tab: (el) => { tab = el.dataset.tab; ctx.replaceUrl(`/notifications?tab=${tab}`); draw(); },
     'read-all': async () => { await api.post('/notifications/read', { all: true }); draw(); },
     clear: async () => { await api.del('/notifications'); draw(); },
     open: async (el) => { await api.post('/notifications/read', { ids: [Number(el.dataset.id)] }); ctx.navigate(el.dataset.link); },
     'toggle-med': async (el) => { await api.put(`/meds/${el.dataset.id}`, { active: el.dataset.active !== '1' }); draw(); },
-    'del-med': async (el) => { if (confirm('Delete this reminder?')) { await api.del(`/meds/${el.dataset.id}`); draw(); } },
-    test: async () => { await api.post('/notifications/test'); toast('Test sent'); },
+    'del-med': async (el) => { if (await askConfirm('Delete this reminder?', { confirmLabel: 'Delete', danger: true })) { await api.del(`/meds/${el.dataset.id}`); draw(); } },
+    test: async () => { await api.post('/notifications/test'); toast('Test sent — check the 🔔 inbox'); draw(); },
+    'local-on': async () => {
+      const perm = await Notification.requestPermission().catch(() => 'denied');
+      toast(perm === 'granted' ? 'Notifications allowed 🔔' : 'Not allowed — you’ll still get in-app banners');
+      draw();
+    },
     'push-on': async () => {
       try {
         const perm = await Notification.requestPermission();

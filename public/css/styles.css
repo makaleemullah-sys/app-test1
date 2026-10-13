@@ -23,11 +23,16 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #161117; --surface: #211a23; --surface-2: #2b222e; --text: #f3ecf4; --muted: #b3a6b8;
     --border: #3a2f3d; --primary: #e46b9f; --primary-soft: #4a2638; --accent: #a68cf0; --accent-soft: #2f2747;
     --fertile: #5a2e45; --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #161117; --surface: #211a23; --surface-2: #2b222e; --text: #f3ecf4; --muted: #b3a6b8;
+  --border: #3a2f3d; --primary: #e46b9f; --primary-soft: #4a2638; --accent: #a68cf0; --accent-soft: #2f2747;
+  --fertile: #5a2e45; --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 16px; line-height: 1.5; }
@@ -179,3 +184,5 @@ ul.tips li { margin-bottom: 4px; }
   .card { box-shadow: none; break-inside: avoid; }
   body { background: #fff; color: #000; }
 }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(20, 10, 20, .45); display: grid; place-items: center; z-index: 60; padding: 16px; }
+.modal { max-width: 420px; width: 100%; }

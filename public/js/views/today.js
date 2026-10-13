@@ -80,9 +80,9 @@ export async function render_(root, ctx) {
           <span style="--c:var(--ovulatory)">Ovulation</span><span style="--c:var(--luteal)">Luteal</span><span style="--c:var(--primary)">Fertile</span>
         </div>
         <div class="row">
-          ${cur.inPeriod || cur.cycleDay <= 10
+          ${cur.inPeriod
             ? html`<button class="btn btn-soft" data-action="period-end">Period ended today</button>`
-            : html`<button class="btn" data-action="period-start">🩸 Period started today</button>`}
+            : cur.cycleDay > 10 ? html`<button class="btn" data-action="period-start">🩸 Period started today</button>` : ''}
           <a class="btn btn-ghost" href="/log">${d.log ? 'Edit today’s log' : 'Log how I feel'}</a>
         </div>
         <small class="muted">Prediction confidence: <b>${d.stats.confidence}</b> · ${d.stats.regularity !== 'unknown' ? d.stats.regularity : 'learning your pattern'}</small>

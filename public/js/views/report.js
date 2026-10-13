@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { html, render as paint, dates } from '../ui.js';
+import { html, render as paint, dates, STANDALONE } from '../ui.js';
 
 const GOAL_LABEL = { track: 'Cycle tracking', conceive: 'Trying to conceive', avoid: 'Avoiding pregnancy', perimenopause: 'Perimenopause' };
 
@@ -9,7 +9,7 @@ export async function render(root) {
   paint(root, html`
     <div class="row between no-print" style="margin-bottom:12px">
       <h1 style="margin:0">Doctor report</h1>
-      <button class="btn" id="print">🖨️ Print / save PDF</button>
+      ${STANDALONE ? '' : html`<button class="btn" id="print">🖨️ Print / save PDF</button>`}
     </div>
     <div class="card">
       <h2>Menstrual health summary — ${r.name}</h2>
@@ -45,5 +45,5 @@ export async function render(root) {
       ${r.meds.length ? html`<h3>Current medications / supplements</h3><p>${r.meds.map((m) => `${m.name}${m.dose ? ` ${m.dose}` : ''} (${m.kind})`).join(' · ')}</p>` : ''}
       <p class="disclaimer">Self-reported data from the Lunaria app. Ovulation marked “estimated” is calendar-based; “bbt”/“lh” are derived from logged temperatures or LH tests. *Luteal length default when not personalised. Not a diagnosis.</p>
     </div>`);
-  root.querySelector('#print').addEventListener('click', () => window.print());
+  root.querySelector('#print')?.addEventListener('click', () => window.print());
 }

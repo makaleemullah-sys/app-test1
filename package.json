@@ -1,7 +1,7 @@
 {
   "name": "lunaria",
   "version": "1.0.0",
-  "description": "Lunaria — a whole-body menstrual cycle health companion: predictions, symptom intelligence, phase-synced nutrition, smart notifications.",
+  "description": "Lunaria \u2014 a whole-body menstrual cycle health companion: predictions, symptom intelligence, phase-synced nutrition, smart notifications.",
   "main": "server/index.js",
   "type": "commonjs",
   "engines": {
@@ -11,11 +11,15 @@
     "start": "node --no-warnings=ExperimentalWarning server/index.js",
     "dev": "node --no-warnings=ExperimentalWarning --watch server/index.js",
     "seed": "node --no-warnings=ExperimentalWarning scripts/seed-demo.js",
-    "test": "node --no-warnings=ExperimentalWarning --test test/*.test.js"
+    "test": "node --no-warnings=ExperimentalWarning --test test/*.test.js",
+    "build:phone": "node scripts/build-phone.js"
   },
   "license": "MIT",
   "dependencies": {
     "express": "^4.21.2",
     "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12"
   }
 }

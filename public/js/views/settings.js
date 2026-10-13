@@ -1,5 +1,5 @@
 import { api, meta } from '../api.js';
-import { html, render as paint, toast } from '../ui.js';
+import { html, render as paint, toast, askConfirm, STANDALONE } from '../ui.js';
 
 const GOAL_LABEL = { track: 'Understand my cycle', conceive: 'Trying to conceive', avoid: 'Avoid pregnancy (awareness)', perimenopause: 'Perimenopause' };
 const COND_LABEL = { pcos: 'PCOS', endometriosis: 'Endometriosis', thyroid: 'Thyroid condition', anemia: 'Anaemia / low iron', pmdd: 'PMDD / severe PMS' };
@@ -42,8 +42,9 @@ export async function render(root, ctx) {
       </div>
       <div class="card">
         <h2>📄 Your data</h2>
-        <p class="muted">Your data lives on this Lunaria server — never sold, never shared. Export it any time.</p>
-        <div class="row"><a class="btn btn-soft" href="/api/export" download="lunaria-export.json">Export JSON</a><a class="btn btn-ghost" href="/report">Doctor report</a></div>
+        <p class="muted">${STANDALONE ? 'In this test version your data is stored privately for you in this browser/account, never on a Lunaria server.' : 'Your data lives on this Lunaria server — never sold, never shared. Export it any time.'}</p>
+        <div class="row">${STANDALONE ? html`<button type="button" class="btn btn-soft" id="export">Show my data (JSON)</button>` : html`<a class="btn btn-soft" href="/api/export" download="lunaria-export.json">Export JSON</a>`}<a class="btn btn-ghost" href="/report">Doctor report</a></div>
+        <div id="export-box" class="hidden" style="margin-top:10px"><textarea id="export-text" rows="8" readonly></textarea><button type="button" class="btn btn-ghost btn-sm" id="export-copy" style="margin-top:6px">Copy</button></div>
       </div>
     </div>
 
@@ -97,10 +98,19 @@ export async function render(root, ctx) {
       toast('Password updated');
     } catch (ex) { toast(ex.message); }
   });
+  root.querySelector('#export')?.addEventListener('click', async () => {
+    const data = await api.get('/export');
+    root.querySelector('#export-text').value = JSON.stringify(data, null, 2);
+    root.querySelector('#export-box').classList.remove('hidden');
+  });
+  root.querySelector('#export-copy')?.addEventListener('click', async () => {
+    const t = root.querySelector('#export-text');
+    try { await navigator.clipboard.writeText(t.value); toast('Copied'); } catch { t.select(); toast('Selected — copy it with your keyboard or long-press'); }
+  });
   root.querySelector('#logout').addEventListener('click', () => ctx.signOut());
   root.querySelector('#del').addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!confirm('Really delete your account and all data?')) return;
+    if (!(await askConfirm('Really delete your account and all data? This can’t be undone.', { confirmLabel: 'Delete everything', danger: true }))) return;
     try {
       await api.del('/auth/account', { password: e.target.password.value });
       toast('Account deleted');

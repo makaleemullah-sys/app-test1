@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { html, render as paint, dates, phasePill, toast, onActions } from '../ui.js';
+import { html, render as paint, dates, phasePill, toast, onActions, askConfirm } from '../ui.js';
 
 export async function render(root, ctx) {
   let month = (ctx.params.get('m') || dates.local()).slice(0, 7) + '-01';
@@ -91,7 +91,7 @@ export async function render(root, ctx) {
       } catch (ex) { toast(ex.message); }
     },
     del: async (el) => {
-      if (!confirm('Delete this period? Predictions will be recalculated.')) return;
+      if (!(await askConfirm('Delete this period? Predictions will be recalculated.', { confirmLabel: 'Delete', danger: true }))) return;
       await api.del(`/periods/${el.dataset.id}`);
       draw();
     },
