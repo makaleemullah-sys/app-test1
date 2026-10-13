@@ -38,7 +38,19 @@ Every type can be switched off. There are also quiet hours (medication reminders
 - Users can export all their data as JSON, change their password (which signs out other devices) and delete their account permanently.
 - All data stays in your own SQLite database.
 
-## Run it
+## Use it on your phone 📱
+
+Lunaria is built mobile-first and installs like an app. It just has to be **hosted at an HTTPS address**: `localhost` on a phone means the phone itself.
+
+1. **Deploy** (pick one):
+   - **Render:** push this repo to GitHub, then in Render go to *New → Blueprint* and select the repo. `render.yaml` sets up the app with a 1 GB persistent disk (Starter plan, because free instances lose data on restart).
+   - **Railway / Fly.io / any Docker host:** deploy the included `Dockerfile` and mount a volume at `/data`.
+2. **Open the URL** you're given on your phone and create an account.
+3. **Install it:**
+   - **Android (Chrome):** menu ⋮ → *Add to Home screen / Install app*
+   - **iPhone (Safari, iOS 16.4+):** Share → *Add to Home Screen*. Open it from the home-screen icon, then turn on notifications in *🔔 → Settings*. On iPhone, push notifications only work from the installed app.
+
+## Run it locally
 
 Requires **Node.js ≥ 22.13** (it uses the built-in `node:sqlite`).
 
@@ -59,6 +71,7 @@ Environment variables (all optional):
 | `VAPID_SUBJECT` | `mailto:admin@lunaria.local` | Push contact |
 | `NOTIFY_INTERVAL_MS` | `300000` | How often the notification scheduler runs |
 | `NODE_ENV=production` | — | Marks cookies `Secure` (serve over HTTPS) |
+| `TRUST_PROXY` | loopback only | Set to `1` behind a hosting proxy so rate limiting sees real client IPs (preset in the Dockerfile) |
 
 Push notifications need HTTPS, or `localhost`. On iOS, install the app to the home screen first (iOS 16.4+).
 

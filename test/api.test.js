@@ -148,7 +148,8 @@ test('notifications: prefs, meds, scheduler and dedupe', async () => {
   assert.ok(!computeNotifications(db, uid, noon).some((n) => n.type === 'medication'));
 
   const r = await c.get('/notifications');
-  assert.ok(r.body.unread >= first.length);
+  // Marking the dose taken also marked its reminder read.
+  assert.ok(r.body.unread >= first.filter((n) => n.type !== 'medication').length);
   await c.post('/notifications/read', { all: true });
   assert.equal((await c.get('/notifications')).body.unread, 0);
 

@@ -9,7 +9,9 @@ const notificationRoutes = require('./routes/notifications');
 function createApp(db, { secureCookies = false } = {}) {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', 'loopback');
+  // Behind a hosting proxy (Render, Railway, Fly…) set TRUST_PROXY=1 so
+  // rate limiting sees each visitor's real IP instead of the proxy's.
+  app.set('trust proxy', process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY : 'loopback');
 
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');

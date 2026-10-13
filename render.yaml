@@ -1,0 +1,14 @@
+# One-click deploy on Render: New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: lunaria
+    runtime: docker
+    plan: starter            # persistent disks need a paid plan
+    healthCheckPath: /
+    envVars:
+      - key: VAPID_SUBJECT
+        value: mailto:you@example.com
+    disk:
+      name: lunaria-data
+      mountPath: /data
+      sizeGB: 1
